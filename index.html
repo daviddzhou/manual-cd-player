@@ -622,8 +622,8 @@
                 this.minimizeBtn = document.getElementById('minimizeBtn');
                 this.minimizedTab = document.getElementById('minimizedTab');
                 
-                // Audio source - chill electronic track (freesound - CCBY)
-                this.audioSrc = 'https://cdn.freesound.org/previews/486/486529_9891111-lq.mp3';
+                // Audio source - sample audio from a reliable CDN
+                this.audioSrc = 'https://commondatastorage.googleapis.com/codeskulptor-demos/riceracer_assets/music/win.ogg';
                 
                 // State
                 this.rotation = 0;
@@ -728,6 +728,10 @@
             
             handleMouseDown(e) {
                 e.preventDefault();
+                // Resume audio context on first interaction (browser autoplay policy)
+                if (this.audioPlayer.paused && this.audioPlayer.src) {
+                    this.audioPlayer.load();
+                }
                 this.isDragging = true;
                 this.velocity = 0;
                 this.lastMouseAngle = this.getAngle(e.clientX, e.clientY);
@@ -736,6 +740,10 @@
             
             handleTouchStart(e) {
                 e.preventDefault();
+                // Resume audio context on first interaction (browser autoplay policy)
+                if (this.audioPlayer.paused && this.audioPlayer.src) {
+                    this.audioPlayer.load();
+                }
                 this.isDragging = true;
                 this.velocity = 0;
                 const touch = e.touches[0];
