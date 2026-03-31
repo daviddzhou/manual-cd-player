@@ -596,7 +596,8 @@
     <!-- Minimized Tab -->
     <div class="minimized-tab" id="minimizedTab"></div>
     
-    <!-- Audio Element -->
+    <!-- Audio Element with crossOrigin for CORS -->
+    <audio id="audioPlayer" preload="auto" crossorigin="anonymous"></audio>
     <audio id="audioPlayer" preload="auto"></audio>
 
     <script>
@@ -654,14 +655,22 @@
             
             init() {
                 // Load audio
+                console.log('Loading audio from:', this.audioSrc);
                 this.audioPlayer.src = this.audioSrc;
+                this.audioPlayer.volume = 1.0;
+                
                 this.audioPlayer.addEventListener('loadedmetadata', () => {
+                    console.log('Audio loaded, duration:', this.audioPlayer.duration);
                     this.audioLoaded = true;
                     this.totalTimeDisplay.textContent = this.formatTime(this.audioPlayer.duration);
                 });
                 
+                this.audioPlayer.addEventListener('canplay', () => {
+                    console.log('Audio can play now');
+                });
+                
                 this.audioPlayer.addEventListener('error', (e) => {
-                    console.warn('Audio load failed, using fallback behavior');
+                    console.warn('Audio load failed:', this.audioPlayer.error);
                     this.totalTimeDisplay.textContent = '03:45';
                 });
                 
@@ -825,8 +834,11 @@
                 // Audio plays whenever RPM is above minimum threshold
                 if (this.rpm >= this.minRpm) {
                     if (!this.isPlaying) {
-                        this.audioPlayer.play().catch(() => {
-                            // Autoplay blocked, will try on next interaction
+                        console.log('Attempting to play audio, RPM:', this.rpm);
+                        this.audioPlayer.play().then(() => {
+                            console.log('Audio playing successfully');
+                        }).catch((err) => {
+                            console.warn('Audio play failed:', err.message);
                         });
                         this.isPlaying = true;
                         this.playingIndicator.classList.add('active');
@@ -839,6 +851,7 @@
                     this.audioPlayer.playbackRate = playbackRate;
                 } else {
                     if (this.isPlaying) {
+                        console.log('Pausing audio, RPM below threshold:', this.rpm);
                         this.audioPlayer.pause();
                         this.isPlaying = false;
                         this.playingIndicator.classList.remove('active');
