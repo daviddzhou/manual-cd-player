@@ -821,11 +821,9 @@
             }
             
             updateAudio() {
-                // Only play when actively spinning with sufficient velocity
-                // Check if velocity is significant (actively spinning or coasting with momentum)
-                const isActivelySpinning = Math.abs(this.velocity) > 2 || this.isDragging;
-                
-                if (this.rpm >= this.minRpm && isActivelySpinning) {
+                // Audio playback logic based on RPM
+                // Audio plays whenever RPM is above minimum threshold
+                if (this.rpm >= this.minRpm) {
                     if (!this.isPlaying) {
                         this.audioPlayer.play().catch(() => {
                             // Autoplay blocked, will try on next interaction
@@ -837,19 +835,8 @@
                     // Calculate playback rate based on RPM
                     // Base rate is 1.0 at reference RPM (150 RPM = normal speed)
                     const referenceRpm = 150;
-                    const speedRatio = this.rpm / referenceRpm;
-                    
-                    // Clamp playback rate between 0.1x and 4x
-                    const playbackRate = Math.min(Math.max(speedRatio, 0.1), 4.0);
-                    
-                    // Set direction: forward if spinning right (velocity > 0), backward if left
-                    if (this.velocity < 0) {
-                        // Spinning left - reverse playback
-                        this.audioPlayer.playbackRate = -Math.abs(playbackRate);
-                    } else {
-                        // Spinning right - normal forward playback
-                        this.audioPlayer.playbackRate = playbackRate;
-                    }
+                    const playbackRate = Math.min(Math.max(this.rpm / referenceRpm, 0.25), 4.0);
+                    this.audioPlayer.playbackRate = playbackRate;
                 } else {
                     if (this.isPlaying) {
                         this.audioPlayer.pause();
