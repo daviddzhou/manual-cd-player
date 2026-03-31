@@ -90,6 +90,50 @@
         .xp-content {
             padding: 12px;
             background: #ece9d8;
+            transition: all 0.3s ease;
+        }
+        
+        .xp-window.minimized .xp-content {
+            display: none;
+        }
+        
+        .xp-window.minimized {
+            width: auto;
+            min-width: 200px;
+        }
+        
+        /* Minimized Tab */
+        .minimized-tab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(180deg, #7baefe 0%, #0054e3 100%);
+            border: 2px solid #003d99;
+            border-radius: 6px 6px 0 0;
+            padding: 6px 12px;
+            color: white;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 
+                0 0 0 1px #000,
+                2px -2px 8px rgba(0,0,0,0.3);
+            display: none;
+            z-index: 1001;
+            user-select: none;
+        }
+        
+        .minimized-tab:hover {
+            background: linear-gradient(180deg, #9fc4ff 0%, #3d8cff 100%);
+        }
+        
+        .minimized-tab.active {
+            display: block;
+        }
+        
+        .minimized-tab::before {
+            content: '▶ ';
+            font-size: 10px;
         }
         
         /* CD Container */
@@ -477,7 +521,7 @@
                 CD Player
             </div>
             <div class="xp-buttons">
-                <button class="xp-btn">_</button>
+                <button class="xp-btn" id="minimizeBtn">_</button>
                 <button class="xp-btn">×</button>
             </div>
         </div>
@@ -554,6 +598,9 @@
         </div>
     </div>
     
+    <!-- Minimized Tab -->
+    <div class="minimized-tab" id="minimizedTab">docs voice over</div>
+    
     <!-- Audio Element -->
     <audio id="audioPlayer" preload="auto"></audio>
 
@@ -575,9 +622,12 @@
                 this.maxRpmValue = document.getElementById('maxRpmValue');
                 this.audioPlayer = document.getElementById('audioPlayer');
                 this.labelText = document.getElementById('labelText');
+                this.xpWindow = document.querySelector('.xp-window');
+                this.minimizeBtn = document.getElementById('minimizeBtn');
+                this.minimizedTab = document.getElementById('minimizedTab');
                 
-                // Audio source - royalty-free piano jazz (Internet Archive - reliable public domain)
-                this.audioSrc = 'https://archive.org/download/RelaxingPianoMusic/Relaxing%20Piano%20Music.mp3';
+                // Audio source - using a reliable CDN with fallback
+                this.audioSrc = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
                 
                 // State
                 this.rotation = 0;
@@ -592,6 +642,7 @@
                 this.isPlaying = false;
                 this.lastTime = 0;
                 this.audioLoaded = false;
+                this.isMinimized = false;
                 
                 // Bind methods
                 this.handleMouseDown = this.handleMouseDown.bind(this);
@@ -642,6 +693,15 @@
                 this.maxRpmSlider.addEventListener('input', (e) => {
                     this.maxRpm = parseInt(e.target.value);
                     this.maxRpmValue.textContent = this.maxRpm;
+                });
+                
+                // Minimize functionality
+                this.minimizeBtn.addEventListener('click', () => {
+                    this.toggleMinimize();
+                });
+                
+                this.minimizedTab.addEventListener('click', () => {
+                    this.toggleMinimize();
                 });
                 
                 // Start animation loop
@@ -787,6 +847,28 @@
                         this.isPlaying = false;
                         this.playingIndicator.classList.remove('active');
                     }
+                }
+            }
+            
+            toggleMinimize() {
+                this.isMinimized = !this.isMinimized;
+                
+                if (this.isMinimized) {
+                    // Minimize
+                    this.xpWindow.classList.add('minimized');
+                    this.minimizedTab.classList.add('active');
+                    
+                    // Pause audio when minimized
+                    if (this.isPlaying) {
+                        this.audioPlayer.pause();
+                        this.isPlaying = false;
+                        this.playingIndicator.classList.remove('active');
+                        this.velocity = 0;
+                    }
+                } else {
+                    // Restore
+                    this.xpWindow.classList.remove('minimized');
+                    this.minimizedTab.classList.remove('active');
                 }
             }
             
