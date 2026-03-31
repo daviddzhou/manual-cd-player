@@ -830,10 +830,8 @@
                 } else if (!this.isDragging && !this.coastMode) {
                     // Instant stop
                     this.velocity = 0;
-                } else {
-                    // Continue rotating with current velocity when dragging
-                    this.rotation += this.velocity * deltaTime;
                 }
+                // Note: When dragging, rotation is updated directly in handleMouseMove/handleTouchMove
                 
                 // Update CD visual rotation
                 this.cdDisc.style.transform = `rotate(${this.rotation}deg)`;
@@ -841,8 +839,10 @@
                 // Update label text rotation (counter-rotate to keep it readable)
                 this.labelText.style.transform = `rotate(${-this.rotation}deg)`;
                 
-                // Calculate RPM (velocity per frame * 60 frames * 60 seconds / 360 degrees)
-                this.rpm = Math.abs(this.velocity * deltaTime * 10);
+                // Calculate RPM based on velocity
+                // RPM = velocity (degrees per frame) * 60 (frames per second) * 60 (seconds) / 360 (degrees per rotation)
+                // Simplified: velocity * 10
+                this.rpm = Math.abs(this.velocity * 10);
                 this.rpmDisplay.textContent = Math.round(this.rpm);
                 
                 // Handle audio playback
@@ -856,12 +856,22 @@
                 // Audio plays whenever RPM is above minimum threshold
                 if (this.rpm >= this.minRpm) {
                     if (!this.isPlaying) {
-                        console.log('Attempting to play audio, RPM:', this.rpm);
-                        this.audioPlayer.play().then(() => {
-                            console.log('Audio playing successfully');
-                        }).catch((err) => {
-                            console.warn('Audio play failed:', err.message);
-                        });
+                        console.log('Attempting to play audio, RPM:', this.rpm, 'Min:', this.minRpm, 'Ready:', this.audioLoaded);
+                        
+                        // Ensure audio is ready
+                        if (this.audioPlayer.readyState < 2) {
+                            console.log('Audio not ready yet, waiting...');
+                            return;
+                        }
+                        
+                        const playPromise = this.audioPlayer.play();
+                        if (playPromise !== undefined) {
+                            playPromise.then(() => {
+                                console.log('✅ Audio playing successfully');
+                            }).catch((err) => {
+                                console.warn('❌ Audio play failed:', err.message, err.name);
+                            });
+                        }
                         this.isPlaying = true;
                         this.playingIndicator.classList.add('active');
                     }
@@ -873,7 +883,7 @@
                     this.audioPlayer.playbackRate = playbackRate;
                 } else {
                     if (this.isPlaying) {
-                        console.log('Pausing audio, RPM below threshold:', this.rpm);
+                        console.log('Pausing audio, RPM:', this.rpm, 'below threshold:', this.minRpm);
                         this.audioPlayer.pause();
                         this.isPlaying = false;
                         this.playingIndicator.classList.remove('active');
