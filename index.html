@@ -638,6 +638,7 @@
                 this.lastTime = 0;
                 this.audioLoaded = false;
                 this.isMinimized = false;
+                this.audioContextUnlocked = false;
                 
                 // Bind methods
                 this.handleMouseDown = this.handleMouseDown.bind(this);
@@ -727,9 +728,9 @@
             
             handleMouseDown(e) {
                 e.preventDefault();
-                // Resume audio context on first interaction (browser autoplay policy)
-                if (this.audioPlayer.paused && this.audioPlayer.src) {
-                    this.audioPlayer.load();
+                // Unlock audio context on first user interaction (required by browser autoplay policy)
+                if (!this.audioContextUnlocked) {
+                    this.unlockAudio();
                 }
                 this.isDragging = true;
                 this.velocity = 0;
@@ -739,14 +740,28 @@
             
             handleTouchStart(e) {
                 e.preventDefault();
-                // Resume audio context on first interaction (browser autoplay policy)
-                if (this.audioPlayer.paused && this.audioPlayer.src) {
-                    this.audioPlayer.load();
+                // Unlock audio context on first user interaction (required by browser autoplay policy)
+                if (!this.audioContextUnlocked) {
+                    this.unlockAudio();
                 }
                 this.isDragging = true;
                 this.velocity = 0;
                 const touch = e.touches[0];
                 this.lastMouseAngle = this.getAngle(touch.clientX, touch.clientY);
+            }
+            
+            unlockAudio() {
+                // Try to play a silent sound to unlock the audio context
+                const silentSound = new Audio('data:audio/wav;base64,UklGRiIAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=');
+                silentSound.play().catch(() => {});
+                
+                // Also try to resume the audio player
+                if (this.audioPlayer.paused) {
+                    this.audioPlayer.load();
+                }
+                
+                this.audioContextUnlocked = true;
+                console.log('Audio context unlocked on first interaction');
             }
             
             handleMouseMove(e) {
