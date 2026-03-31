@@ -622,8 +622,8 @@
                 this.minimizeBtn = document.getElementById('minimizeBtn');
                 this.minimizedTab = document.getElementById('minimizedTab');
                 
-                // Audio source - sample audio from a reliable CDN
-                this.audioSrc = 'https://commondatastorage.googleapis.com/codeskulptor-demos/riceracer_assets/music/win.ogg';
+                // Audio source - using local file to avoid CORS issues
+                this.audioSrc = './background-music.mp3';
                 
                 // State
                 this.rotation = 0;
@@ -671,7 +671,7 @@
                 
                 this.audioPlayer.addEventListener('error', (e) => {
                     console.warn('Audio load failed:', this.audioPlayer.error);
-                    this.totalTimeDisplay.textContent = '03:45';
+                    this.totalTimeDisplay.textContent = '--:--';
                 });
                 
                 // Event listeners
