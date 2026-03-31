@@ -562,11 +562,11 @@
                 <div class="control-group">
                     <div class="control-label">
                         <span>Min RPM (Playback Start)</span>
-                        <span class="control-value" id="minRpmValue">50</span>
+                        <span class="control-value" id="minRpmValue">0</span>
                     </div>
                     <div class="slider-container">
                         <span class="slider-min">0</span>
-                        <input type="range" class="xp-slider" id="minRpmSlider" min="0" max="200" value="50">
+                        <input type="range" class="xp-slider" id="minRpmSlider" min="0" max="200" value="0">
                         <span class="slider-max">200</span>
                     </div>
                 </div>
@@ -621,8 +621,8 @@
                 this.minimizeBtn = document.getElementById('minimizeBtn');
                 this.minimizedTab = document.getElementById('minimizedTab');
                 
-                // Audio source - smooth jazz piano (freesound.org - CCBY license)
-                this.audioSrc = 'https://cdn.freesound.org/previews/316/316898_5121236-lq.mp3';
+                // Audio source - chill electronic track (freesound - CCBY)
+                this.audioSrc = 'https://cdn.freesound.org/previews/486/486529_9891111-lq.mp3';
                 
                 // State
                 this.rotation = 0;
@@ -631,7 +631,7 @@
                 this.isDragging = false;
                 this.lastMouseAngle = 0;
                 this.coastMode = false;
-                this.minRpm = 50;
+                this.minRpm = 0;
                 this.maxRpm = 300;
                 this.friction = 0.98;
                 this.isPlaying = false;
