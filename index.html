@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual CD Player - Memelord Edition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'VT323', monospace;
+            background: linear-gradient(135deg, #2d5016 0%, #4a7c2a 50%, #2d5016 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            cursor: default;
+        }
+        
+        /* Windows XP Window Styling */
+        .xp-window {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 320px;
+            background: #ece9d8;
+            border: 2px solid #0054e3;
+            border-radius: 8px 8px 0 0;
+            box-shadow: 
+                0 0 0 1px #000,
+                4px 4px 12px rgba(0,0,0,0.4),
+                inset 0 1px 0 rgba(255,255,255,0.5);
+            z-index: 1000;
+        }
+        
+        .xp-titlebar {
+            background: linear-gradient(180deg, #7baefe 0%, #0054e3 100%);
+            padding: 6px 8px;
+            border-radius: 6px 6px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #003d99;
+        }
+        
+        .xp-title {
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .xp-icon {
+            width: 16px;
+            height: 16px;
+            background: #c0c0c0;
+            border: 1px solid #808080;
+            border-radius: 2px;
+        }
+        
+        .xp-buttons {
+            display: flex;
+            gap: 2px;
+        }
+        
+        .xp-btn {
+            width: 20px;
+            height: 18px;
+            border: 1px solid #fff;
+            background: linear-gradient(180deg, #7baefe 0%, #0054e3 100%);
+            color: white;
+            font-size: 12px;
+            line-height: 14px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 2px;
+        }
+        
+        .xp-btn:hover {
+            background: linear-gradient(180deg, #9fc4ff 0%, #3d8cff 100%);
+        }
+        
+        .xp-content {
+            padding: 12px;
+            background: #ece9d8;
+        }
+        
+        /* CD Container */
+        .cd-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 15px;
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+        }
+        
+        .cd-container:active {
+            cursor: grabbing;
+        }
+        
+        .cd-disc {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 
+                0 0 0 3px #c0c0c0,
+                0 0 0 4px #808080,
+                0 4px 20px rgba(0,0,0,0.5),
+                inset 0 0 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .cd-disc::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #333 50%, #1a1a1a 100%);
+            border-radius: 50%;
+            border: 3px solid #666;
+            z-index: 10;
+            box-shadow: 
+                0 0 0 2px #999,
+                0 0 0 3px #666,
+                inset 0 0 10px rgba(255,255,255,0.1);
+        }
+        
+        .cd-disc::after {
+            content: 'MEMELORD.COM';
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 
+                -1px -1px 0 #008b8b,
+                1px -1px 0 #008b8b,
+                -1px 1px 0 #008b8b,
+                1px 1px 0 #008b8b;
+            z-index: 5;
+            letter-spacing: 1px;
+        }
+        
+        .cd-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 55px;
+            height: 55px;
+            background: #1a1a1a;
+            border-radius: 50%;
+            z-index: 11;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .cd-label-text {
+            font-size: 5px;
+            color: #ccc;
+            line-height: 1.2;
+            width: 40px;
+            transform: rotate(0deg);
+        }
+        
+        .cd-label-text span {
+            display: inline-block;
+            transform-origin: center;
+        }
+        
+        .cd-surface {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(135deg, #87ceeb 0%, #4a90d9 40%, #87ceeb 60%, #4a90d9 100%),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(255,255,255,0.03) 2px,
+                    rgba(255,255,255,0.03) 4px
+                );
+            background-blend-mode: overlay;
+        }
+        
+        .cd-surface::before {
+            content: '';
+            position: absolute;
+            top: 30%;
+            left: 0;
+            width: 100%;
+            height: 40%;
+            background: linear-gradient(180deg, 
+                transparent 0%,
+                rgba(50,150,50,0.9) 20%,
+                rgba(34,139,34,0.95) 50%,
+                rgba(50,150,50,0.9) 80%,
+                transparent 100%
+            );
+        }
+        
+        .cd-surface::after {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 15%;
+            width: 20%;
+            height: 15%;
+            background: rgba(255,255,255,0.9);
+            border-radius: 50%;
+            filter: blur(8px);
+        }
+        
+        .cd-shine {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, 
+                transparent 40%,
+                rgba(255,255,255,0.3) 50%,
+                transparent 60%
+            );
+            pointer-events: none;
+            animation: shine 8s linear infinite;
+        }
+        
+        @keyframes shine {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .cd-edge {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(180deg, 
+                rgba(255,255,255,0.1) 0%,
+                rgba(0,255,0,0.3) 30%,
+                rgba(255,255,0,0.6) 60%,
+                rgba(255,165,0,0.4) 100%
+            );
+            border-radius: 0 0 50% 50%;
+        }
+        
+        /* Status Display */
+        .status-panel {
+            background: #000;
+            border: 2px inset #808080;
+            padding: 8px;
+            margin-bottom: 12px;
+            font-size: 16px;
+            color: #00ff00;
+            text-shadow: 0 0 5px rgba(0,255,0,0.5);
+            display: flex;
+            justify-content: space-between;
+            font-family: 'VT323', monospace;
+        }
+        
+        .status-rpm {
+            color: #00ff00;
+        }
+        
+        .status-time {
+            color: #ffff00;
+        }
+        
+        /* Controls Panel */
+        .controls-panel {
+            background: linear-gradient(180deg, #fff 0%, #ece9d8 100%);
+            border: 2px outset #fff;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .control-group {
+            margin-bottom: 10px;
+        }
+        
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .control-label {
+            font-size: 12px;
+            color: #000;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .control-value {
+            color: #0054e3;
+            font-weight: bold;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .xp-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 20px;
+            background: linear-gradient(180deg, #fff 0%, #d4d0c8 100%);
+            border: 2px inset #d4d0c8;
+            border-radius: 2px;
+            outline: none;
+        }
+        
+        .xp-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 10px;
+            height: 18px;
+            background: linear-gradient(180deg, #7baefe 0%, #0054e3 100%);
+            border: 1px solid #003d99;
+            border-radius: 2px;
+            cursor: pointer;
+            box-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .xp-slider::-moz-range-thumb {
+            width: 10px;
+            height: 18px;
+            background: linear-gradient(180deg, #7baefe 0%, #0054e3 100%);
+            border: 1px solid #003d99;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        
+        .slider-min, .slider-max {
+            font-size: 10px;
+            color: #666;
+            min-width: 25px;
+        }
+        
+        /* Toggle Switch */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .xp-toggle {
+            position: relative;
+            width: 50px;
+            height: 22px;
+            background: linear-gradient(180deg, #d4d0c8 0%, #a0a0a0 100%);
+            border: 2px inset #d4d0c8;
+            border-radius: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .xp-toggle.active {
+            background: linear-gradient(180deg, #7baefe 0%, #0054e3 100%);
+        }
+        
+        .xp-toggle-knob {
+            position: absolute;
+            top: 1px;
+            left: 1px;
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(180deg, #fff 0%, #d4d0c8 100%);
+            border: 1px solid #808080;
+            border-radius: 50%;
+            transition: transform 0.2s;
+            box-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .xp-toggle.active .xp-toggle-knob {
+            transform: translateX(28px);
+        }
+        
+        /* Instructions */
+        .instructions {
+            background: #ffffcc;
+            border: 1px solid #cccc99;
+            padding: 8px;
+            font-size: 11px;
+            color: #333;
+            text-align: center;
+            border-radius: 2px;
+        }
+        
+        .instructions strong {
+            color: #0054e3;
+        }
+        
+        /* Visual indicator for active state */
+        .playing-indicator {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 15px;
+            height: 15px;
+            background: #00ff00;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00ff00;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 100;
+        }
+        
+        .playing-indicator.active {
+            opacity: 1;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        
+        /* Drag hint */
+        .drag-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 20;
+        }
+        
+        .cd-container:hover .drag-hint {
+            opacity: 1;
+        }
+        
+        .cd-container:active .drag-hint {
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main CD Player Widget -->
+    <div class="xp-window">
+        <div class="xp-titlebar">
+            <div class="xp-title">
+                <div class="xp-icon"></div>
+                CD Player
+            </div>
+            <div class="xp-buttons">
+                <button class="xp-btn">_</button>
+                <button class="xp-btn">×</button>
+            </div>
+        </div>
+        
+        <div class="xp-content">
+            <!-- CD Display -->
+            <div class="cd-container" id="cdContainer">
+                <div class="playing-indicator" id="playingIndicator"></div>
+                <div class="cd-disc" id="cdDisc">
+                    <div class="cd-surface"></div>
+                    <div class="cd-edge"></div>
+                    <div class="cd-label">
+                        <div class="cd-label-text" id="labelText">
+                            <span>I</span><span>s</span><span>&nbsp;</span><span>i</span><span>t</span><span>&nbsp;</span><span>l</span><span>i</span><span>v</span><span>e</span><br>
+                            <span>o</span><span>r</span><span>&nbsp;</span><span>i</span><span>s</span><span>&nbsp;</span><span>i</span><span>t</span><br>
+                            <span>M</span><span>e</span><span>m</span><span>o</span><span>r</span><span>e</span><span>x</span><span>?</span>
+                        </div>
+                    </div>
+                    <div class="cd-shine"></div>
+                </div>
+                <div class="drag-hint">Drag to spin!</div>
+            </div>
+            
+            <!-- Status Display -->
+            <div class="status-panel">
+                <span class="status-rpm">RPM: <span id="rpmDisplay">0</span></span>
+                <span class="status-time"><span id="currentTime">00:00</span> / <span id="totalTime">00:00</span></span>
+            </div>
+            
+            <!-- Controls Panel -->
+            <div class="controls-panel">
+                <!-- Coast Toggle -->
+                <div class="control-group">
+                    <div class="toggle-container">
+                        <span class="control-label">Coast Mode</span>
+                        <div class="xp-toggle" id="coastToggle">
+                            <div class="xp-toggle-knob"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Min RPM Slider -->
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Min RPM (Playback Start)</span>
+                        <span class="control-value" id="minRpmValue">50</span>
+                    </div>
+                    <div class="slider-container">
+                        <span class="slider-min">0</span>
+                        <input type="range" class="xp-slider" id="minRpmSlider" min="0" max="200" value="50">
+                        <span class="slider-max">200</span>
+                    </div>
+                </div>
+                
+                <!-- Max RPM Slider -->
+                <div class="control-group">
+                    <div class="control-label">
+                        <span>Max RPM (Max Speed)</span>
+                        <span class="control-value" id="maxRpmValue">300</span>
+                    </div>
+                    <div class="slider-container">
+                        <span class="slider-min">100</span>
+                        <input type="range" class="xp-slider" id="maxRpmSlider" min="100" max="500" value="300">
+                        <span class="slider-max">500</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Instructions -->
+            <div class="instructions">
+                <strong>How to play:</strong> Drag the CD to spin it manually!<br>
+                Audio plays when RPM is above minimum threshold.
+            </div>
+        </div>
+    </div>
+    
+    <!-- Audio Element -->
+    <audio id="audioPlayer" preload="auto"></audio>
+
+    <script>
+        // CD Player Application
+        class ManualCDPlayer {
+            constructor() {
+                // DOM Elements
+                this.cdContainer = document.getElementById('cdContainer');
+                this.cdDisc = document.getElementById('cdDisc');
+                this.rpmDisplay = document.getElementById('rpmDisplay');
+                this.currentTimeDisplay = document.getElementById('currentTime');
+                this.totalTimeDisplay = document.getElementById('totalTime');
+                this.playingIndicator = document.getElementById('playingIndicator');
+                this.coastToggle = document.getElementById('coastToggle');
+                this.minRpmSlider = document.getElementById('minRpmSlider');
+                this.maxRpmSlider = document.getElementById('maxRpmSlider');
+                this.minRpmValue = document.getElementById('minRpmValue');
+                this.maxRpmValue = document.getElementById('maxRpmValue');
+                this.audioPlayer = document.getElementById('audioPlayer');
+                this.labelText = document.getElementById('labelText');
+                
+                // Audio source - royalty-free piano jazz
+                this.audioSrc = 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf01a.mp3?filename=relaxing-piano-music-106328.mp3';
+                
+                // State
+                this.rotation = 0;
+                this.velocity = 0;
+                this.rpm = 0;
+                this.isDragging = false;
+                this.lastMouseAngle = 0;
+                this.coastMode = false;
+                this.minRpm = 50;
+                this.maxRpm = 300;
+                this.friction = 0.98;
+                this.isPlaying = false;
+                this.lastTime = 0;
+                this.audioLoaded = false;
+                
+                // Bind methods
+                this.handleMouseDown = this.handleMouseDown.bind(this);
+                this.handleMouseMove = this.handleMouseMove.bind(this);
+                this.handleMouseUp = this.handleMouseUp.bind(this);
+                this.handleTouchStart = this.handleTouchStart.bind(this);
+                this.handleTouchMove = this.handleTouchMove.bind(this);
+                this.handleTouchEnd = this.handleTouchEnd.bind(this);
+                this.animate = this.animate.bind(this);
+                
+                // Initialize
+                this.init();
+            }
+            
+            init() {
+                // Load audio
+                this.audioPlayer.src = this.audioSrc;
+                this.audioPlayer.addEventListener('loadedmetadata', () => {
+                    this.audioLoaded = true;
+                    this.totalTimeDisplay.textContent = this.formatTime(this.audioPlayer.duration);
+                });
+                
+                this.audioPlayer.addEventListener('error', (e) => {
+                    console.warn('Audio load failed, using fallback behavior');
+                    this.totalTimeDisplay.textContent = '03:45';
+                });
+                
+                // Event listeners
+                this.cdContainer.addEventListener('mousedown', this.handleMouseDown);
+                this.cdContainer.addEventListener('touchstart', this.handleTouchStart, { passive: false });
+                
+                document.addEventListener('mousemove', this.handleMouseMove);
+                document.addEventListener('mouseup', this.handleMouseUp);
+                document.addEventListener('touchmove', this.handleTouchMove, { passive: false });
+                document.addEventListener('touchend', this.handleTouchEnd);
+                
+                // Controls
+                this.coastToggle.addEventListener('click', () => {
+                    this.coastMode = !this.coastMode;
+                    this.coastToggle.classList.toggle('active', this.coastMode);
+                });
+                
+                this.minRpmSlider.addEventListener('input', (e) => {
+                    this.minRpm = parseInt(e.target.value);
+                    this.minRpmValue.textContent = this.minRpm;
+                });
+                
+                this.maxRpmSlider.addEventListener('input', (e) => {
+                    this.maxRpm = parseInt(e.target.value);
+                    this.maxRpmValue.textContent = this.maxRpm;
+                });
+                
+                // Start animation loop
+                this.animate();
+                
+                // Update time display
+                setInterval(() => {
+                    if (this.audioLoaded) {
+                        this.currentTimeDisplay.textContent = this.formatTime(this.audioPlayer.currentTime);
+                    }
+                }, 250);
+            }
+            
+            getAngle(x, y) {
+                const rect = this.cdContainer.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                return Math.atan2(y - centerY, x - centerX) * (180 / Math.PI);
+            }
+            
+            handleMouseDown(e) {
+                e.preventDefault();
+                this.isDragging = true;
+                this.velocity = 0;
+                this.lastMouseAngle = this.getAngle(e.clientX, e.clientY);
+                this.cdContainer.style.cursor = 'grabbing';
+            }
+            
+            handleTouchStart(e) {
+                e.preventDefault();
+                this.isDragging = true;
+                this.velocity = 0;
+                const touch = e.touches[0];
+                this.lastMouseAngle = this.getAngle(touch.clientX, touch.clientY);
+            }
+            
+            handleMouseMove(e) {
+                if (!this.isDragging) return;
+                e.preventDefault();
+                
+                const currentAngle = this.getAngle(e.clientX, e.clientY);
+                let deltaAngle = currentAngle - this.lastMouseAngle;
+                
+                // Handle angle wrap-around
+                if (deltaAngle > 180) deltaAngle -= 360;
+                if (deltaAngle < -180) deltaAngle += 360;
+                
+                this.velocity = deltaAngle;
+                this.rotation += deltaAngle;
+                this.lastMouseAngle = currentAngle;
+            }
+            
+            handleTouchMove(e) {
+                if (!this.isDragging) return;
+                e.preventDefault();
+                
+                const touch = e.touches[0];
+                const currentAngle = this.getAngle(touch.clientX, touch.clientY);
+                let deltaAngle = currentAngle - this.lastMouseAngle;
+                
+                if (deltaAngle > 180) deltaAngle -= 360;
+                if (deltaAngle < -180) deltaAngle += 360;
+                
+                this.velocity = deltaAngle;
+                this.rotation += deltaAngle;
+                this.lastMouseAngle = currentAngle;
+            }
+            
+            handleMouseUp() {
+                this.isDragging = false;
+                this.cdContainer.style.cursor = 'grab';
+                
+                if (!this.coastMode) {
+                    this.velocity = 0;
+                }
+            }
+            
+            handleTouchEnd() {
+                this.isDragging = false;
+                
+                if (!this.coastMode) {
+                    this.velocity = 0;
+                }
+            }
+            
+            animate() {
+                const now = performance.now();
+                const deltaTime = (now - this.lastTime) / 16.67; // Normalize to 60fps
+                this.lastTime = now;
+                
+                if (!this.isDragging && this.coastMode) {
+                    // Apply friction when coasting
+                    this.velocity *= this.friction;
+                    this.rotation += this.velocity * deltaTime;
+                    
+                    // Stop completely if velocity is very small
+                    if (Math.abs(this.velocity) < 0.1) {
+                        this.velocity = 0;
+                    }
+                } else if (!this.isDragging && !this.coastMode) {
+                    // Instant stop
+                    this.velocity = 0;
+                } else {
+                    // Continue rotating with current velocity when dragging
+                    this.rotation += this.velocity * deltaTime;
+                }
+                
+                // Update CD visual rotation
+                this.cdDisc.style.transform = `rotate(${this.rotation}deg)`;
+                
+                // Update label text rotation (counter-rotate to keep it readable)
+                this.labelText.style.transform = `rotate(${-this.rotation}deg)`;
+                
+                // Calculate RPM (velocity per frame * 60 frames * 60 seconds / 360 degrees)
+                this.rpm = Math.abs(this.velocity * deltaTime * 10);
+                this.rpmDisplay.textContent = Math.round(this.rpm);
+                
+                // Handle audio playback
+                this.updateAudio();
+                
+                requestAnimationFrame(this.animate);
+            }
+            
+            updateAudio() {
+                // Audio playback logic based on RPM
+                if (this.rpm >= this.minRpm) {
+                    if (!this.isPlaying) {
+                        this.audioPlayer.play().catch(() => {
+                            // Autoplay blocked, will try on next interaction
+                        });
+                        this.isPlaying = true;
+                        this.playingIndicator.classList.add('active');
+                    }
+                    
+                    // Adjust playback rate based on RPM ratio
+                    // Base rate is 1.0 at reference RPM (let's say 150 RPM = normal speed)
+                    const referenceRpm = 150;
+                    const playbackRate = Math.min(Math.max(this.rpm / referenceRpm, 0.25), 4.0);
+                    this.audioPlayer.playbackRate = playbackRate;
+                } else {
+                    if (this.isPlaying) {
+                        this.audioPlayer.pause();
+                        this.isPlaying = false;
+                        this.playingIndicator.classList.remove('active');
+                    }
+                }
+            }
+            
+            formatTime(seconds) {
+                if (isNaN(seconds)) return '00:00';
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+        }
+        
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            new ManualCDPlayer();
+        });
+    </script>
+</body>
+</html>
