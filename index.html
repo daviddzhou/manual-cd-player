@@ -639,6 +639,7 @@
                 this.audioLoaded = false;
                 this.isMinimized = false;
                 this.audioContextUnlocked = false;
+                this.isAttemptingPlay = false;
                 
                 // Bind methods
                 this.handleMouseDown = this.handleMouseDown.bind(this);
@@ -855,12 +856,14 @@
                 // Audio playback logic based on RPM
                 // Audio plays whenever RPM is above minimum threshold
                 if (this.rpm >= this.minRpm) {
-                    if (!this.isPlaying) {
-                        console.log('Attempting to play audio, RPM:', this.rpm, 'Min:', this.minRpm, 'Ready:', this.audioLoaded);
+                    if (!this.isPlaying && !this.isAttemptingPlay) {
+                        this.isAttemptingPlay = true;
+                        console.log('Attempting to play audio, RPM:', this.rpm, 'Min:', this.minRpm, 'Ready:', this.audioPlayer.readyState);
                         
                         // Ensure audio is ready
                         if (this.audioPlayer.readyState < 2) {
                             console.log('Audio not ready yet, waiting...');
+                            this.isAttemptingPlay = false;
                             return;
                         }
                         
@@ -868,25 +871,36 @@
                         if (playPromise !== undefined) {
                             playPromise.then(() => {
                                 console.log('✅ Audio playing successfully');
+                                this.isPlaying = true;
+                                this.playingIndicator.classList.add('active');
+                                this.isAttemptingPlay = false;
                             }).catch((err) => {
-                                console.warn('❌ Audio play failed:', err.message, err.name);
+                                console.warn('❌ Audio play failed:', err.message);
+                                this.isPlaying = false;
+                                this.isAttemptingPlay = false;
                             });
+                        } else {
+                            // Fallback for browsers that don't return a promise
+                            this.isPlaying = true;
+                            this.playingIndicator.classList.add('active');
+                            this.isAttemptingPlay = false;
                         }
-                        this.isPlaying = true;
-                        this.playingIndicator.classList.add('active');
                     }
                     
                     // Calculate playback rate based on RPM
                     // Base rate is 1.0 at reference RPM (150 RPM = normal speed)
-                    const referenceRpm = 150;
-                    const playbackRate = Math.min(Math.max(this.rpm / referenceRpm, 0.25), 4.0);
-                    this.audioPlayer.playbackRate = playbackRate;
+                    if (this.isPlaying) {
+                        const referenceRpm = 150;
+                        const playbackRate = Math.min(Math.max(this.rpm / referenceRpm, 0.25), 4.0);
+                        this.audioPlayer.playbackRate = playbackRate;
+                    }
                 } else {
                     if (this.isPlaying) {
                         console.log('Pausing audio, RPM:', this.rpm, 'below threshold:', this.minRpm);
                         this.audioPlayer.pause();
                         this.isPlaying = false;
                         this.playingIndicator.classList.remove('active');
+                        this.isAttemptingPlay = false;
                     }
                 }
             }
